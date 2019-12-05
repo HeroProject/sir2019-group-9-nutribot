@@ -47,7 +47,7 @@ class NutribotApplication(Base.AbstractApplication):
         #
         # self.negativeFlow()
 
-        quit('done')
+        # quit('done')
 
         # Main interaction loop
         done = False
