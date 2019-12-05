@@ -41,11 +41,11 @@ class NutribotApplication(Base.AbstractApplication):
         # self.gestureLock.acquire()
 
         # Testing module
-        self.speechLock = Semaphore(0)
-        self.sayAnimated('Oh, why haven\'t you eaten yet?')
-        self.speechLock.acquire()
-
-        self.negativeFlow()
+        # self.speechLock = Semaphore(0)
+        # self.sayAnimated('Oh, why haven\'t you eaten yet?')
+        # self.speechLock.acquire()
+        #
+        # self.negativeFlow()
 
         quit('done')
 
@@ -63,6 +63,7 @@ class NutribotApplication(Base.AbstractApplication):
 
             if self.flow == 'suggestion':
                 self.suggestionFlow()
+                self.speechLock.acquire()
 
             elif self.flow == 'negative':
 
