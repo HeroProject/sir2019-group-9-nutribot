@@ -10,8 +10,9 @@ class DialogFlowSampleApplication(Base.AbstractApplication):
         self.langLock.acquire()
  
         # Pass the required Dialogflow parameters (add your Dialogflow parameters)
-        self.setDialogflowKey('<keyfile>.json')
-        self.setDialogflowAgent('<projectid>')
+        self.setDialogflowKey('nutribot-igoqwf-ff0373fcda97.json')
+        self.setDialogflowAgent('nutribot-igoqwf')
+
  
         # Make the robot ask the question, and wait until it is done speaking
         self.speechLock = Semaphore(0)

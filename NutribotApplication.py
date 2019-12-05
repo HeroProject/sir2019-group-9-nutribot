@@ -10,8 +10,8 @@ class NutribotApplication(Base.AbstractApplication):
         self.langLock.acquire()
 
         # Pass the required Dialogflow parameters (add your Dialogflow parameters)
-        self.setDialogflowKey('<keyfile>.json')
-        self.setDialogflowAgent('<projectid>')
+        self.setDialogflowKey('nutribot-igoqwf-ef32d473df4d.json')
+        self.setDialogflowAgent('nutribot-igoqwf')
 
         # Make the robot ask the question, and wait until it is done speaking
         self.speechLock = Semaphore(0)
@@ -36,14 +36,23 @@ class NutribotApplication(Base.AbstractApplication):
         self.speechLock.acquire()
 
         # Display a gesture (replace <gestureID> with your gestureID)
-        self.gestureLock = Semaphore(0)
-        self.doGesture('<gestureID>/behavior_1')
-        self.gestureLock.acquire()
+        # self.gestureLock = Semaphore(0)
+        # self.doGesture('<gestureID>/behavior_1')
+        # self.gestureLock.acquire()
+
+        # Testing module
+        self.speechLock = Semaphore(0)
+        self.sayAnimated('Oh, why haven\'t you eaten yet?')
+        self.speechLock.acquire()
+
+        self.negativeFlow()
+
+        quit('done')
 
         # Main interaction loop
         done = False
-        while not done:
-
+        while done is False:
+            print("ey")
             # Inquire about meal
             self.speechLock = Semaphore(0)
             self.sayAnimated('So, what did you eat?')
@@ -56,6 +65,7 @@ class NutribotApplication(Base.AbstractApplication):
                 self.suggestionFlow()
 
             elif self.flow == 'negative':
+
                 self.sayAnimated('Oh, why haven\'t you eaten yet?')
                 self.negativeFlow()
                 self.speechLock.acquire()
@@ -81,7 +91,9 @@ class NutribotApplication(Base.AbstractApplication):
             self.meal = args[0]
             self.mealLock.release()
         elif intentName == 'no_meal' and len(args) > 0:
-            self.negativeReason()
+            print("neg no meal", args)
+            self.negativeReason = args[0]
+            self.negativeReasonLock.release()
 
     def mealEvent(self):
         self.meal = None
@@ -94,18 +106,16 @@ class NutribotApplication(Base.AbstractApplication):
         if not self.meal:  # wait one more second after stopListening (if needed)
             self.mealLock.acquire(timeout=1)
 
-        if self.meal:
+        if self.meal == 'No':
+            self.flow = 'negative'
+
+        elif self.meal:
             self.sayAnimated("Okay, great! I\'ve registered everything.")
             self.speechLock.acquire()
             self.flow = 'suggestion'
 
-        elif self.meal == 'No':
-            self.flow = 'negative'
-
         else:
             self.flow = 'failure'
-
-            # all of these statements loop back to the top
 
     def suggestionFlow(self):
         self.speechLock = Semaphore(0)
@@ -123,22 +133,25 @@ class NutribotApplication(Base.AbstractApplication):
 
         # unfinished branch
 
-
     def negativeFlow(self):
+        print("in negativeflow")
         self.negativeReason = None
         self.negativeReasonLock = Semaphore(0)
         self.setAudioContext('no_meal')
         self.startListening()
         self.negativeReasonLock.acquire(timeout=5)
         self.stopListening()
+
+        print(self.negativeReason)
+
         if not self.negativeReason:  # wait one more second after stopListening (if needed)
             self.negativeReasonLock.acquire(timeout=1)
-
+            print("if not")
         if self.negativeReason == 'Forgot':
             self.speechLock = Semaphore(0)
             self.sayAnimated('It\'s past meal time! Time to eat.')
             self.speechLock.acquire()
-
+            print(self.negativeReason)
         elif self.negativeReason == 'Time':
             self.speechLock = Semaphore(0)
             self.sayAnimated('That\'s too bad! I\'ll ask you again in an hour.')

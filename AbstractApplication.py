@@ -2,8 +2,8 @@ import time
 from pathlib import Path
 from threading import Thread
 
+import AbstractApplication as Base
 import redis
-
 
 class AbstractApplication(object):
     __topics = ["events_robot", "detected_person", "recognised_face", "audio_language", "audio_intent", "audio_newfile",
