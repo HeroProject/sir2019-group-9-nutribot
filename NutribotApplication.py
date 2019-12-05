@@ -135,7 +135,8 @@ class NutribotApplication(Base.AbstractApplication):
             self.sayAnimated('Sorry, I didn\'t catch that.')
             self.speechLock.acquire()
         elif self.wantsSuggestion =='yes':
-            self.giveSuggestion()
+            self.sayAnimated('You might want to eat more fiber and make sure you stay away from sugar. Also, make sure you drink plenty of water. It is recommended to drink 2 liters per day. ')
+            self.speechLock.acquire()
         elif self.wantsSuggestion == 'no':
             self.sayAnimated('Go fuck yourself then.')
             self.speechLock.acquire()
