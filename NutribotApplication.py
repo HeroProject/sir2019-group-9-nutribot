@@ -124,14 +124,21 @@ class NutribotApplication(Base.AbstractApplication):
 
         self.wantsSuggestion = None
         self.wantsSuggestionLock = Semaphore(0)
-        self.setAudioContext('no_meal')
+        self.setAudioContext('yesno')
         self.startListening()
         self.wantsSuggestionLock.acquire(timeout=5)
         self.stopListening()
         if not self.wantsSuggestion:  # wait one more second after stopListening (if needed)
             self.wantsSuggestionLock.acquire(timeout=1)
 
-        # unfinished branch
+        if not self.wantsSuggestion:
+            self.sayAnimated('Sorry, I didn\'t catch that.')
+            self.speechLock.acquire()
+        elif self.wantsSuggestion =='yes':
+            self.giveSuggestion()
+        elif self.wantsSuggestion == 'no':
+            self.sayAnimated('Go fuck yourself then.')
+            self.speechLock.acquire()
 
     def negativeFlow(self):
         print("in negativeflow")
