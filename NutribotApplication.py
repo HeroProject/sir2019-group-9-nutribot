@@ -139,7 +139,7 @@ class NutribotApplication(Base.AbstractApplication):
             self.sayAnimated('You might want to eat more fiber and make sure you stay away from sugar. Also, make sure you drink plenty of water. It is recommended to drink 2 liters per day. ')
             self.speechLock.acquire()
         elif self.wantsSuggestion == 'no':
-            self.sayAnimated('Go fuck yourself then.')
+            self.sayAnimated('Okay, that is fine for now, but please let me know if you would like some advice and I would be happy to help!')
             self.speechLock.acquire()
 
     def negativeFlow(self):
@@ -165,6 +165,7 @@ class NutribotApplication(Base.AbstractApplication):
             self.speechLock = Semaphore(0)
             self.sayAnimated('That\'s too bad! I\'ll ask you again in an hour.')
             self.speechLock.acquire()
+
 
 # Run the application
 nutribot = NutribotApplication()
