@@ -125,7 +125,7 @@ class NutribotApplication(Base.AbstractApplication):
     def mealEvent(self):
         print("mealEvent called")
         self.meal = None
-        self.flow = None
+        # self.flow = None
         self.mealLock = Semaphore(0)
         self.setAudioContext('input_meal')
         self.startListening()
@@ -136,34 +136,34 @@ class NutribotApplication(Base.AbstractApplication):
         if not self.meal:  # wait one more second after stopListening (if needed)
             self.mealLock.acquire(timeout=1)
 
+    
+        if 'no' in self.meal:
+            # self.flow = 'negative'
+            print("No in meal")
+            self.suggestionFlow()
+            return
+
+        elif len(self.meal) > 0: #and len(self.meals) < 5:
+            print("self.meal line 160", self.meal)
+            print("in elif meal 151")
+            self.meal_history[self.meal] += 1
+            self.meals.append(self.meal)
+
+            self.sayAnimated("Okay, great! I\'ve registered "+str(self.meal))
+            self.speechLock.acquire()
+
+            print(self.meal_history)
+
+            self.sayAnimated("Anything else?")
+            self.speechLock.acquire()
+
+            self.mealEvent()
+
         else:
-            if 'no' in self.meal:
-                # self.flow = 'negative'
-                print("No in meal")
-                self.suggestionFlow()
-                return
+            self.sayAnimated("I'm sorry, I didn't catch that.")
+            self.speechLock.acquire()
 
-            elif len(self.meal) > 0: #and len(self.meals) < 5:
-                print("self.meal line 160", self.meal)
-                print("in elif meal 151")
-                self.meal_history[self.meal] += 1
-                self.meals.append(self.meal)
-
-                self.sayAnimated("Okay, great! I\'ve registered "+str(self.meal))
-                self.speechLock.acquire()
-
-                print(self.meal_history)
-
-                self.sayAnimated("Anything else?")
-                self.speechLock.acquire()
-
-                self.mealEvent()
-
-            else:
-                self.sayAnimated("I'm sorry, I didn't catch that.")
-                self.speechLock.acquire()
-
-                self.mealEvent()
+            self.mealEvent()
 
     def suggestionFlow(self):
         self.speechLock = Semaphore(0)
