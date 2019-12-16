@@ -10,12 +10,12 @@ class NutribotApplication(Base.AbstractApplication):
         self.langLock.acquire()
 
         # Pass the required Dialogflow parameters (add your Dialogflow parameters)
-        self.setDialogflowKey('nutribot-igoqwf-29c25ede3da3.json')
+        self.setDialogflowKey('nutribot-igoqwf-a11b76792da9.json')
         self.setDialogflowAgent('nutribot-igoqwf')
 
         # Make the robot ask the question, and wait until it is done speaking
         self.speechLock = Semaphore(0)
-        self.sayAnimated('Hi, I\'m Noot! What is your name?')
+        self.sayAnimated('Hi, I\'m Noot, your dietary assistant! What is your name?')
         self.speechLock.acquire()
 
         self.meal_history = {"carbs": 0, "fruits": 0, "vegetables": 0, "dairy": 0, "protein": 0, "sugar": 0}
@@ -32,6 +32,7 @@ class NutribotApplication(Base.AbstractApplication):
         self.startListening()
         self.nameLock.acquire(timeout=4)
         self.stopListening()
+
         if not self.name:  # wait one more second after stopListening (if needed)
             self.nameLock.acquire(timeout=1)
 
@@ -91,9 +92,11 @@ class NutribotApplication(Base.AbstractApplication):
             
                 # register a meal event
                 self.mealEvent()
+                break
 
             elif self.yesno == 'no':
                 self.negativeFlow()
+                break
 
     def onRobotEvent(self, event):
         if event == 'LanguageChanged':
@@ -125,7 +128,7 @@ class NutribotApplication(Base.AbstractApplication):
     def mealEvent(self):
         print("mealEvent called")
         self.meal = None
-        self.flow = None
+        # self.flow = None
         self.mealLock = Semaphore(0)
         self.setAudioContext('input_meal')
         self.startListening()
@@ -133,37 +136,37 @@ class NutribotApplication(Base.AbstractApplication):
         self.stopListening()
         print("self.meal line 148", self.meal)
 
-        if not self.meal:  # wait one more second after stopListening (if needed)
-            self.mealLock.acquire(timeout=1)
+        # if not self.meal:  # wait one more second after stopListening (if needed)
+        #     self.mealLock.acquire(timeout=1)
 
-        else:
-            if 'no' in self.meal:
-                # self.flow = 'negative'
-                print("No in meal")
-                self.suggestionFlow()
-                return
+        if not self.meal:
+            self.sayAnimated("I'm sorry, I didn't catch that. Could you repeat that?")
+            self.speechLock.acquire()
 
-            elif len(self.meal) > 0: #and len(self.meals) < 5:
-                print("self.meal line 160", self.meal)
-                print("in elif meal 151")
-                self.meal_history[self.meal] += 1
-                self.meals.append(self.meal)
+            self.mealEvent()
 
-                self.sayAnimated("Okay, great! I\'ve registered "+str(self.meal))
-                self.speechLock.acquire()
+        elif 'no' in self.meal:
+            # self.flow = 'negative'
+            print("No in meal")
+            self.suggestionFlow()
+            return
 
-                print(self.meal_history)
+        elif len(self.meal) > 0: #and len(self.meals) < 5:
+            print("self.meal line 160", self.meal)
+            print("in elif meal 151")
+            self.meal_history[self.meal] += 1
+            self.meals.append(self.meal)
 
-                self.sayAnimated("Anything else?")
-                self.speechLock.acquire()
+            self.sayAnimated("Okay, great! I\'ve registered "+str(self.meal))
+            self.speechLock.acquire()
 
-                self.mealEvent()
+            print(self.meal_history)
 
-            else:
-                self.sayAnimated("I'm sorry, I didn't catch that.")
-                self.speechLock.acquire()
+            self.sayAnimated("Anything else?")
+            self.speechLock.acquire()
 
-                self.mealEvent()
+            self.mealEvent()
+
 
     def suggestionFlow(self):
         self.speechLock = Semaphore(0)
@@ -178,7 +181,12 @@ class NutribotApplication(Base.AbstractApplication):
         self.stopListening()
         self.wantsSuggestionLock.release()
 
-        if not self.yesno:  # wait one more second after stopListening (if needed)
+
+        if not self.yesno:
+            self.sayAnimated("I'm sorry, I didn't catch that. Could you repeat that?")
+            self.speechLock.acquire()
+
+        elif self.yesno == 'no':  # wait one more second after stopListening (if needed)
             self.speechLock = Semaphore(0)
             self.sayAnimated("Are you sure? I'm somewhat of an expert.")
             self.speechLock.acquire()
@@ -191,39 +199,79 @@ class NutribotApplication(Base.AbstractApplication):
             self.stopListening()
             self.wantsSuggestionLock.release()
 
-        print("yesno line 198", self.yesno)
-        if not self.yesno:
-            self.sayAnimated("I'm gonna do it anyway!")
-            self.speechLock.acquire()
-            max_group = max(self.meal_history.keys(), key=(lambda key: self.meal_history[key]))
-            min_group = min(self.meal_history.keys(), key=(lambda key: self.meal_history[key]))
-            meal_avg = mean(self.meal_history.values())
-            meal_std = stdev(self.meal_history.values())
+            print("yesno line 198", self.yesno)
+            if not self.yesno:
+                self.sayAnimated("I'm gonna do it anyway!")
+                self.speechLock.acquire()
+                max_group = max(self.meal_history.keys(), key=(lambda key: self.meal_history[key]))
+                min_group = min(self.meal_history.keys(), key=(lambda key: self.meal_history[key]))
+                meal_avg = mean(self.meal_history.values())
+                meal_std = stdev(self.meal_history.values())
 
-            uneaten = []
-            for k,v in self.meal_history.items():
-                if v == self.meal_history[min_group] and v == 0:
-                    uneaten.append(k)
+                uneaten = []
+                for k,v in self.meal_history.items():
+                    if v == self.meal_history[min_group] and v == 0:
+                        uneaten.append(k)
 
-            output_sent = ""
+                output_sent = ""
 
-            if meal_avg > 1:
-                if meal_std > meal_avg:
-                    output_sent += "Your diet could use some more balance."
-                else:
-                    output_sent += "Your diet is balanced, good job!"
+                if meal_avg > 1:
+                    if meal_std > meal_avg:
+                        output_sent += "Your diet could use some more balance."
+                    else:
+                        output_sent += "Your diet is balanced, good job!"
 
-            if max_group in self.unhealthy_meals:
-                self.sayAnimated("Woah, you've had a lot of " + max_group + " today. You might want to eat more fiber and stay away from sugar. And don't forget to hydrate!")
+                if max_group in self.unhealthy_meals:
+                    self.sayAnimated("Woah, you've had a lot of " + max_group + " today. You might want to eat more fiber and stay away from sugar. And don't forget to hydrate!")
+                    self.speechLock.acquire()
+
+                elif max_group in self.healthy_meals:
+                    output_sent += ("Good job! " + max_group + " are healthy for you.")
+                    if max_group == "vegetables":
+                        output_sent += "Plenty of greens! Reward yourself with a snack!"
+
+                self.sayAnimated(output_sent)
                 self.speechLock.acquire()
 
-            elif max_group in self.healthy_meals:
-                output_sent += ("Good job! " + max_group + " are healthy for you.")
-                if max_group == "vegetables":
-                    output_sent += "Plenty of greens! Reward yourself with a snack!"
+            elif self.yesno == 'no':
+                max_group = max(self.meal_history.keys(), key=(lambda key: self.meal_history[key]))
+                min_group = min(self.meal_history.keys(), key=(lambda key: self.meal_history[key]))
+                meal_avg = mean(self.meal_history.values())
+                meal_std = stdev(self.meal_history.values())
 
-            self.sayAnimated(output_sent)
-            self.speechLock.acquire()
+                uneaten = []
+                for k,v in self.meal_history.items():
+                    if v == self.meal_history[min_group] and v == 0:
+                        uneaten.append(k)
+
+                output_sent = ""
+
+                if meal_avg > 1:
+                    if meal_std > meal_avg:
+                        output_sent += "Your diet could use some more balance."
+                    else:
+                        output_sent += "Your diet is balanced, good job!"
+
+                if max_group in self.unhealthy_meals:
+                    self.sayAnimated("Woah, you've had a lot of " + max_group + " today. You might want to eat more fiber and stay away from sugar. And don't forget to hydrate!")
+                    self.speechLock.acquire()
+
+                elif max_group in self.healthy_meals:
+                    output_sent += ("Good job! " + max_group + " are healthy for you.")
+                    if max_group == "vegetables":
+                        output_sent += "Plenty of greens! Reward yourself with a snack!"
+
+                self.sayAnimated(output_sent)
+                self.speechLock.acquire()
+
+                # if user is lactose intolerant and self.meal_history["dairy"] > 0:
+                # "Careful with your dairy intake"
+
+            elif self.yesno == 'yes':
+                self.sayAnimated('Okay, that is fine for now, but please let me know if you would like some advice and I would be happy to help!')
+                self.speechLock.acquire()
+                exit()
+
         elif self.yesno == 'yes':
             max_group = max(self.meal_history.keys(), key=(lambda key: self.meal_history[key]))
             min_group = min(self.meal_history.keys(), key=(lambda key: self.meal_history[key]))
@@ -231,7 +279,7 @@ class NutribotApplication(Base.AbstractApplication):
             meal_std = stdev(self.meal_history.values())
 
             uneaten = []
-            for k,v in self.meal_history.items():
+            for k, v in self.meal_history.items():
                 if v == self.meal_history[min_group] and v == 0:
                     uneaten.append(k)
 
@@ -244,7 +292,8 @@ class NutribotApplication(Base.AbstractApplication):
                     output_sent += "Your diet is balanced, good job!"
 
             if max_group in self.unhealthy_meals:
-                self.sayAnimated("Woah, you've had a lot of " + max_group + " today. You might want to eat more fiber and stay away from sugar. And don't forget to hydrate!")
+                self.sayAnimated(
+                    "Woah, you've had a lot of " + max_group + " today. You might want to eat more fiber and stay away from sugar. And don't forget to hydrate!")
                 self.speechLock.acquire()
 
             elif max_group in self.healthy_meals:
@@ -257,11 +306,6 @@ class NutribotApplication(Base.AbstractApplication):
 
             # if user is lactose intolerant and self.meal_history["dairy"] > 0:
             # "Careful with your dairy intake"
-
-        elif self.yesno == 'no':
-            self.sayAnimated('Okay, that is fine for now, but please let me know if you would like some advice and I would be happy to help!')
-            self.speechLock.acquire()
-            exit()
 
     def negativeFlow(self):
         self.speechLock = Semaphore(0)
